@@ -1,16 +1,47 @@
-# React + Vite
+# Aplicação React com Supabase
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicação web criada com React e Vite. A listagem e os detalhes dos registros são consultados na tabela `jogos` do Supabase.
 
-Currently, two official plugins are available:
+## Requisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js (versão LTS) e npm
+- Um projeto no Supabase com a tabela `jogos` configurada
 
-## React Compiler
+## Configuração
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Instale as dependências:
 
-## Expanding the ESLint configuration
+   ```bash
+   npm install
+   ```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+2. Na raiz do projeto, crie o arquivo `.env.local` com as credenciais do seu projeto Supabase:
+
+   ```env
+   VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+   VITE_SUPABASE_ANON_KEY=sua_chave_publicavel
+   ```
+
+   Encontre a URL e a chave publicável (publishable/anon) nas configurações de API do projeto Supabase. O cliente da aplicação lê essas variáveis em `src/services/supabase.js`.
+
+   As variáveis com prefixo `VITE_` são incluídas no código enviado ao navegador. Use somente a chave publicável/anon e nunca coloque uma chave `service_role` ou outro segredo nesse arquivo. O `.env.local` é ignorado pelo Git; não publique credenciais em repositórios ou mensagens.
+
+3. Se o servidor de desenvolvimento já estiver aberto, reinicie-o após criar ou alterar o arquivo de ambiente.
+
+## Executar
+
+Inicie o servidor local:
+
+```bash
+npm run dev
+```
+
+Abra no navegador o endereço informado pelo Vite (normalmente `http://localhost:5173`).
+
+## Outros comandos
+
+```bash
+npm run build    # gera a versão de produção em dist/
+npm run preview  # serve localmente a versão gerada
+npm run lint     # executa o ESLint
+```
