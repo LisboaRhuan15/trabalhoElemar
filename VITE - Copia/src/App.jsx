@@ -10,6 +10,7 @@ import Detalhes from "./pages/Detalhes";
 import Perfil from "./pages/Perfil";
 import Pagina404 from "./pages/Pagina404";
 import "./App.css";
+import NovoRegistro from "./pages/NovoRegistro";
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/registros" element={<Listagem />} />
+            <Route path="/registros/novo" element={<NovoRegistro />} />
             <Route path="/registros/:id" element={<Detalhes />} />
             <Route path="/perfil" element={<Perfil />} />
           </Route>

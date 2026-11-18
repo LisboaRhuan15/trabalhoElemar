@@ -1,38 +1,41 @@
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, Navigate, useNavigate } from "react-router";
 import { supabase } from "../services/supabase";
 import { useAuth } from "../hooks/useAuth";
+import { loginSchema } from "../schemas/loginSchema";
+import { traduzirErroAuth } from "../utils/errosSupabase";
 
 export default function Login() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
-  const [erro, setErro] = useState(null);
-  const [carregando, setCarregando] = useState(false);
 
-  // Quem já está logado não precisa ver o login
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    mode: "onTouched",
+    defaultValues: { email: "", senha: "" },
+  });
+
   if (!loading && user) return <Navigate to="/dashboard" replace />;
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (carregando) return; // impede envio repetido
-
-    setErro(null);
-    if (!email.trim() || !senha) {
-      setErro("Preencha e-mail e senha.");
-      return;
-    }
-
-    setCarregando(true);
+  async function onSubmit({ email, senha }) {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password: senha,
     });
-    setCarregando(false);
 
     if (error) {
-      setErro("Não foi possível entrar: " + error.message);
+      const { campo, mensagem } = traduzirErroAuth(error, "login");
+      if (campo) {
+        setError(campo, { type: "server", message: mensagem });
+      } else {
+        setError("root.serverError", { type: "server", message: mensagem });
+      }
       return;
     }
 
@@ -42,20 +45,25 @@ export default function Login() {
   return (
     <section className="form-box">
       <h1>Entrar</h1>
-      <form onSubmit={handleSubmit} noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <label>
           E-mail
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input type="email" {...register("email")} />
+          {errors.email && <span className="erro">{errors.email.message}</span>}
         </label>
+
         <label>
           Senha
-          <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} />
+          <input type="password" {...register("senha")} />
+          {errors.senha && <span className="erro">{errors.senha.message}</span>}
         </label>
 
-        {erro && <p className="erro">{erro}</p>}
+        {errors.root?.serverError && (
+          <p className="erro">{errors.root.serverError.message}</p>
+        )}
 
-        <button type="submit" disabled={carregando}>
-          {carregando ? "Entrando..." : "Entrar"}
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Entrando..." : "Entrar"}
         </button>
       </form>
       <p>

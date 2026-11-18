@@ -31,6 +31,7 @@ export default function Listagem() {
   return (
     <section>
       <h1>Registros</h1>
+      <Link to="/registros/novo">+ Novo registro</Link>
       <ul className="lista">
         {registros.map((item) => (
           <li key={item.id}>

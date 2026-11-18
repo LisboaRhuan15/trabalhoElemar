@@ -1,102 +1,99 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router";
 import { supabase } from "../services/supabase";
+import { registroSchema } from "../schemas/registroSchema";
+import { traduzirErroAuth } from "../utils/errosSupabase";
 
 export default function Registro() {
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
-  const [confirmacao, setConfirmacao] = useState("");
-  const [erro, setErro] = useState(null);
-  const [mensagem, setMensagem] = useState(null);
-  const [carregando, setCarregando] = useState(false);
+  const [sucesso, setSucesso] = useState(null);
 
-  function validar() {
-    if (!nome.trim() || !email.trim() || !senha || !confirmacao) {
-      return "Todos os campos são obrigatórios.";
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return "Informe um e-mail válido.";
-    }
-    if (senha.length < 8) {
-      return "A senha deve ter no mínimo 8 caracteres.";
-    }
-    if (senha !== confirmacao) {
-      return "A confirmação de senha não corresponde à senha.";
-    }
-    return null;
-  }
+  const {
+    register,
+    handleSubmit,
+    setError,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(registroSchema),
+    mode: "onTouched",
+    defaultValues: { nome: "", email: "", senha: "", confirmacao: "" },
+  });
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setErro(null);
-    setMensagem(null);
+  async function onSubmit({ nome, email, senha }) {
+    setSucesso(null);
 
-    const erroValidacao = validar();
-    if (erroValidacao) {
-      setErro(erroValidacao);
-      return;
-    }
-
-    setCarregando(true);
     const { data, error } = await supabase.auth.signUp({
       email,
       password: senha,
       options: { data: { nome } },
     });
-    setCarregando(false);
 
     if (error) {
-      setErro(error.message);
+      const { campo, mensagem } = traduzirErroAuth(error, "cadastro");
+      if (campo) {
+        setError(campo, { type: "server", message: mensagem });
+      } else {
+        setError("root.serverError", { type: "server", message: mensagem });
+      }
       return;
     }
 
-    // Com confirmação de e-mail ligada, e-mail já cadastrado volta sem erro e sem identities
+   
     if (data.user && data.user.identities?.length === 0) {
-      setErro("Este e-mail já está cadastrado.");
+      setError("email", {
+        type: "server",
+        message: "Este e-mail já está cadastrado.",
+      });
       return;
     }
 
-    if (data.session) {
-      setMensagem("Cadastro realizado com sucesso! Você já está logado.");
-    } else {
-      setMensagem(
-        "Cadastro realizado! Verifique seu e-mail e confirme o endereço antes de fazer login."
-      );
-    }
-
-    setNome("");
-    setEmail("");
-    setSenha("");
-    setConfirmacao("");
+    setSucesso(
+      data.session
+        ? "Cadastro realizado com sucesso! Você já está logado."
+        : "Cadastro realizado! Verifique seu e-mail e confirme o endereço antes de entrar."
+    );
+    reset();
   }
 
   return (
     <section className="form-box">
       <h1>Criar conta</h1>
-      <form onSubmit={handleSubmit} noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <label>
           Nome completo
-          <input value={nome} onChange={(e) => setNome(e.target.value)} />
+          <input {...register("nome")} />
+          {errors.nome && <span className="erro">{errors.nome.message}</span>}
         </label>
+
         <label>
           E-mail
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input type="email" {...register("email")} />
+          {errors.email && <span className="erro">{errors.email.message}</span>}
         </label>
+
         <label>
           Senha
-          <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} />
+          <input type="password" {...register("senha")} />
+          {errors.senha && <span className="erro">{errors.senha.message}</span>}
         </label>
+
         <label>
           Confirmar senha
-          <input type="password" value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)} />
+          <input type="password" {...register("confirmacao")} />
+          {errors.confirmacao && (
+            <span className="erro">{errors.confirmacao.message}</span>
+          )}
         </label>
 
-        {erro && <p className="erro">{erro}</p>}
-        {mensagem && <p className="sucesso">{mensagem}</p>}
+        {errors.root?.serverError && (
+          <p className="erro">{errors.root.serverError.message}</p>
+        )}
+        {sucesso && <p className="sucesso">{sucesso}</p>}
 
-        <button type="submit" disabled={carregando}>
-          {carregando ? "Cadastrando..." : "Cadastrar"}
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Cadastrando..." : "Cadastrar"}
         </button>
       </form>
       <p>
